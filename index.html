@@ -6,7 +6,7 @@
 	<!--  移动端一定要加下面这句话  -->
 	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 	<link rel="stylesheet" href="css/iconfont.css">
-	<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 	<style>
 		* {
 			margin: 0;
@@ -262,7 +262,7 @@
 				_this.isLoading = true
 				_this.$element.find('.loading').show()
 				$.ajax({
-					url: 'http://api.douban.com/v2/movie/top250?',
+					url: '//api.douban.com/v2/movie/top250?',
 					type: 'GET',
 					data: {
 						start: _this.requestIndex ||0,
@@ -309,7 +309,7 @@
 				_this.isLoading = true
 				_this.$element.find('.loading').show()
 				$.ajax({
-					url: 'http://api.douban.com/v2/movie/us_box',
+					url: '//api.douban.com/v2/movie/us_box',
 					dataType: 'jsonp'
 				}).done(function(ret){
 					callback&&callback(ret)
@@ -355,7 +355,7 @@
 				_this.isLoading = true
 				_this.$element.find('.loading').show()
 				$.ajax({
-					url: 'http://api.douban.com/v2/movie/search',
+					url: '//api.douban.com/v2/movie/search',
 					type: 'GET',
 					data: {
 						q: keyword
