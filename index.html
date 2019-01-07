@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>豆瓣电影</title>
+	<!--  移动端一定要加下面这句话  -->
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	<link rel="stylesheet" href="css/iconfont.css">
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		a {
+			text-decoration: none;
+			color: #333;
+		}
+
+		html, body {
+			height: 100%;
+		}
+
+		body {
+			position: relative;
+			font-size: 12px;
+			line-height: 1.2;
+			background-color: #fff;
+		}
+
+		main {
+			height: calc(100vh - 50px);
+		}
+
+		main>section {
+			display: none;
+			height: 100%;
+			overflow: scroll;
+			/*在ios上滚动是弹性的*/
+			-webkit-overflow-scrolling: touch;
+		}
+
+		main>section:first-child {
+			display: block;
+		}
+
+		main>section .item {
+			border-bottom: 1px solid #ccc;
+			padding: 10px 0;
+		}
+
+		.item>a {
+			display: block;
+			display: flex;
+		}
+
+		.item .cover,
+		.item .cover>img {
+			width: 70px;
+		}
+
+		.item .detail {
+			flex:1;
+			padding-left: 10px;
+		}
+
+		.item .detail>h2 {
+			font-size: 16px;
+		}
+
+		.item .detail .extra {
+			color: #888;
+			margin-top: 5px;
+		}
+
+		.item .detail .score {
+			color: #ff5722;
+		}
+
+		.loading {
+			padding-top: 10px;
+			text-align: center;
+			display: none;
+		}
+
+		.loading .iconfont {
+			display: inline-block;
+			/* rotate 是下面定义的动作 linear 是均匀的旋转 infinite 是无休止的*/
+			animation: 1s rotate linear infinite;
+		}
+
+		@keyframes rotate {
+			0% {transform: rotate(0deg);}
+			100% {transform: rotate(360deg);}
+		}
+
+		.search-area {
+			border-bottom: 1px solid #ccc;
+			padding: 5px;
+			font: 12px/1.2 Arial;
+			display: flex;
+		}
+
+		.search-area input {
+			flex: 1;
+			background-color: #f1f1f1;
+			border: 1px solid transparent;
+			border-radius: 5px;
+			outline: none;
+			padding-left: 4px;
+			color: #000;
+
+		}
+
+		.search-area .button {
+			background-color: #ff5722;
+			border-radius: 3px;
+			padding: 10px;
+			margin-left: 10px;
+		}
+
+
+		footer {
+			position: absolute;
+			bottom: 0;
+			/*绝对定位后需要宽度设为100%，否则无法撑开*/
+			width: 100%;
+			height: 50px;
+			border-top: 1px solid #ccc;
+			display: flex;
+		}
+
+		footer>div {
+			flex: 1;
+			text-align: center;
+		}
+
+		footer .active {
+			color: #ff5722;
+		}
+
+		footer>div>span {
+			display: block;
+			padding-top: 5px;
+		}
+	</style>
+</head>
+<body>
+	<main>
+		<section id="top250">
+				<div class="container">
+				<!-- <div class="item">
+					<a href="#">
+						<div class="cover"><img src="http://img1.doubanio.com/view/photo/s_ratio_poster/public/p480747492.jpg" alt=""></div>
+						<div class="detail">
+							<h2>肖申克的救赎</h2>
+							<div class="extra"><span class="score">9.6分</span> / 1000收藏</div>
+							<div class="extra">1994 / 犯罪 / 剧情</div>
+							<div class="extra">导演：弗兰克·德拉邦特</div>
+							<div class="extra">主演：蒂姆·罗宾斯、摩根·弗里曼、鲍勃·冈顿</div>
+						</div>
+					</a>
+				</div> -->
+				</div>
+				<div class="loading"><span class="iconfont icon-loading"></span></div>
+		</section>
+		<section id="beimei">
+			<div class="container">
+			</div>
+			<div class="loading"><span class="iconfont icon-loading"></span></div>
+		</section>
+		<section id="search">
+			<div class="search-area">
+				<input type="text" placeholder="搜索电影"><span class="button">搜索</span>
+			</div>
+			<div class="search-result">
+				<div class="loading"><span class="iconfont icon-loading"></span></div>
+			</div>
+		</section>
+	</main>
+	<footer>
+		<div class="active"><span class="iconfont icon-top250"></span><span>Top250</span></div>
+		<div><span class="iconfont icon-us"></span><span>北美</span></div>
+		<div><span class="iconfont icon-search"></span><span>搜索</span></div>
+	</footer>
+
+
+	<script>
+		
+		var Toolers = {
+			isToEnd: function($viewport, $content){
+				return $viewport.height()+ $viewport.scrollTop() + 10 > $content.height()
+			},
+
+			createNode: function(movieDetail){
+				var tpl = `<div class="item">
+					<a href="#">
+						<div class="cover"><img src="http://img1.doubanio.com/view/photo/s_ratio_poster/public/p480747492.jpg" alt="oh ho 图片获取不到"></div>
+						<div class="detail">
+							<h2>肖申克的救赎</h2>
+							<div class="extra"><span class="score">9.6</span>分 / <span class="collect">1000</span>收藏</div>
+							<div class="extra"><span class="year">1994</span> / <span class="genre">犯罪 / 剧情</span></div>
+							<div class="extra">导演：<span class="directors">弗兰克·德拉邦特</span></div>
+							<div class="extra">主演：<span class="actors">蒂姆·罗宾斯、摩根·弗里曼、鲍勃·冈顿</span></div>
+						</div>
+					</a>
+				</div>`
+				var $node = $(tpl)
+				$node.find('.cover img').attr('src',movieDetail.images.medium)
+				$node.find('.detail h2').text(movieDetail.title)
+				$node.find('.detail .score').text(movieDetail.rating.average)
+				$node.find('.detail .collect').text(movieDetail.collect_count)
+				$node.find('.detail .year').text(movieDetail.year)
+				$node.find('.detail .genre').text(movieDetail.genres.join('/'))
+				$node.find('.detail .directors').text(function(){
+					var directors = []
+					movieDetail.directors.forEach(function(a){
+						directors.push(a.name)
+					})
+					return directors.join('、')
+				})
+				$node.find('.detail .actors').text(function(){
+					var actors = []
+					movieDetail.casts.forEach(function(a){
+						actors.push(a.name)
+					})
+					return actors.join('、')
+				})
+				return $node
+			}
+		}
+
+		var Top250Page = {
+			init: function(){
+				this.$element = $('#top250')
+				this.$content = this.$element.find('.container')
+				this.requestIndex = 0
+				this.isFinish = false
+				this.isLoading = false
+				this.bind()
+				this.start()
+			},
+			bind: function(){
+				var _this = this
+				this.$element.scroll(function(){
+					if(!_this.isFinish && Toolers.isToEnd(_this.$element,_this.$content)){
+						_this.start()
+					}
+				})
+			},
+			start: function(){
+				var _this = this
+				this.getData(function(data){
+					_this.render(data)
+				})
+			},
+			getData: function(callback){
+				var _this = this 
+				if(_this.isLoading) return;
+				_this.isLoading = true
+				_this.$element.find('.loading').show()
+				$.ajax({
+					url: 'http://api.douban.com/v2/movie/top250?',
+					type: 'GET',
+					data: {
+						start: _this.requestIndex ||0,
+						count: 20
+					},
+					dataType: 'jsonp'
+				}).done(function(ret){
+					// console.log(ret)
+					_this.requestIndex += 20
+					if(_this.requestIndex >= ret.total){
+						_this.isFinish = true
+					}
+					callback&&callback(ret)
+				}).fail(function(){
+					console.log('数据异常')
+				}).always(function(){
+					_this.isLoading = false
+					_this.$element.find('.loading').hide()
+				})
+			},
+			render: function(data){
+				var _this = this
+				data.subjects.forEach(function(movieDetail){
+					_this.$content.append(Toolers.createNode(movieDetail))
+				})
+			}
+		}
+
+		var usBoxPage = {
+			init: function(){
+				this.$element = $('#beimei')
+				this.$content = this.$element.find('.container')
+				this.start()
+			},
+			start: function(){
+				var _this = this
+				this.getData(function(data){
+					_this.render(data)
+				})
+			},
+			getData: function(callback){
+				var _this = this 
+				if(_this.isLoading) return;
+				_this.isLoading = true
+				_this.$element.find('.loading').show()
+				$.ajax({
+					url: 'http://api.douban.com/v2/movie/us_box',
+					dataType: 'jsonp'
+				}).done(function(ret){
+					callback&&callback(ret)
+				}).fail(function(){
+					console.log('数据异常')
+				}).always(function(){
+					_this.$element.find('.loading').hide()
+				})
+			},
+			render: function(data){
+				var _this = this
+				data.subjects.forEach(function(movieDetail){
+					_this.$content.append(Toolers.createNode(movieDetail.subject))
+				})
+			}
+		}
+
+		var searchPage = {
+			init: function(){
+				this.$element = $('#search')
+				this.$input = this.$element.find('input')
+				this.$btn = this.$element.find('.button')
+				this.$content = this.$element.find('.search-result')
+				this.bind()
+			},
+			bind: function(){
+				var _this = this
+				this.$btn.click(function(){
+					_this.getData(_this.$input.val(),function(data){
+						_this.render(data)
+					})
+				})
+			},
+			start: function(){
+				var _this = this
+				this.getData(function(data){
+					_this.render(data)
+				})
+			},
+			getData: function(keyword,callback){
+				var _this = this 
+				if(_this.isLoading) return;
+				_this.isLoading = true
+				_this.$element.find('.loading').show()
+				$.ajax({
+					url: 'http://api.douban.com/v2/movie/search',
+					type: 'GET',
+					data: {
+						q: keyword
+					},
+					dataType: 'jsonp'
+				}).done(function(ret){
+					callback&&callback(ret)
+				}).fail(function(){
+					console.log('数据异常')
+				}).always(function(){
+					_this.$element.find('.loading').hide()
+				})
+			},
+			render: function(data){
+				var _this = this
+				data.subjects.forEach(function(movieDetail){
+					_this.$content.append(Toolers.createNode(movieDetail))
+				})
+			}
+		}
+
+
+		var app = {
+			init: function(){
+				this.$tabs = $('footer>div')
+				this.$panels = $('section')
+				this.bind()
+
+				Top250Page.init()
+				usBoxPage.init()
+				searchPage.init()
+			},
+			bind: function(){
+				var _this = this
+				this.$tabs.on('click',function(){
+					$(this).addClass('active').siblings().removeClass('active')
+					_this.$panels.hide().eq($(this).index()).fadeIn()
+				})
+				window.ontouchmove = function(e){
+					e.preventDefault()
+				}
+				this.$panels.each(function(){
+					this.ontouchmove = function(e){
+						e.stopPropagation()
+					}
+				})
+			}
+		}
+
+		app.init()
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
